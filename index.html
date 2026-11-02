@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-[#F5F5F7] text-[#1D1D1F]">
+<body class="bg-[#F5F5F7] text-[#1D1D1F] m-0 p-0">
   <div id="root"></div>
   <script>
     const { useState } = React;
@@ -43,9 +43,8 @@
       const totalSpent = transactions.reduce((acc, t) => acc + t.amount, 0);
       const totalSavings = savingsGoals.reduce((acc, g) => acc + g.current, 0);
       const budgetLimit = budgets.totalMonthly;
-      const excess = totalSpent > budgetLimit ? totalSpent - budgetLimit : 0;
       const totalAvailable = budgetLimit - totalSpent;
-      const effectiveSavings = Math.max(0, totalSavings - excess);
+      const effectiveSavings = Math.max(0, totalSavings);
 
       const handleSimulateApplePay = (e) => {
         e.preventDefault();
@@ -93,49 +92,4 @@
         React.createElement('main', { style: { maxWidth: '680px', margin: '24px auto', padding: '0 16px' } },
           activeTab === 'dashboard' && React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
             React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' } },
-              React.createElement('div', { style: { background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' } },
-                React.createElement('p', { style: { margin: '0 0 6px 0', fontSize: '13px', color: '#86868B' } }, 'Total Disponible'),
-                React.createElement('h2', { style: { margin: 0, fontSize: '26px', fontWeight: 700, color: totalAvailable >= 0 ? '#1D1D1F' : '#FF3B30' } }, `${totalAvailable.toFixed(2)} €`)
-              ),
-              React.createElement('div', { style: { background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' } },
-                React.createElement('p', { style: { margin: '0 0 6px 0', fontSize: '13px', color: '#86868B' } }, 'Total Ahorros'),
-                React.createElement('h2', { style: { margin: 0, fontSize: '26px', fontWeight: 700, color: '#0071E3' } }, `${effectiveSavings.toFixed(2)} €`)
-              )
-            ),
-            React.createElement('div', { style: { background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' } },
-              React.createElement('h3', { style: { fontSize: '15px', fontWeight: 600, marginTop: 0, marginBottom: '16px' } }, 'Presupuestos por Categoría'),
-              React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-                Object.entries(budgets.categories).map(([cat, limit]) => {
-                  const spentInCat = transactions.filter(t => t.category === cat).reduce((sum, t) => sum + t.amount, 0);
-                  const pct = Math.min(100, Math.round((spentInCat / limit) * 100));
-                  return React.createElement('div', { key: cat },
-                    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' } },
-                      React.createElement('span', { style: { fontWeight: 500 } }, cat),
-                      React.createElement('span', { style: { color: '#86868B' } }, `${spentInCat.toFixed(2)} € / ${limit} €`)
-                    ),
-                    React.createElement('div', { style: { width: '100%', height: '6px', backgroundColor: '#E5E5EA', borderRadius: '3px', overflow: 'hidden' } },
-                      React.createElement('div', { style: { width: `${pct}%`, height: '100%', backgroundColor: pct > 90 ? '#FF3B30' : '#0071E3', borderRadius: '3px' } })
-                    )
-                  );
-                })
-              )
-            )
-          ),
-          activeTab === 'chat' && React.createElement('div', { style: { background: '#fff', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', height: '450px', padding: '16px' } },
-            React.createElement('h3', { style: { fontSize: '15px', fontWeight: 600, marginTop: 0, marginBottom: '12px' } }, 'Asistente IA Gemini'),
-            React.createElement('div', { style: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' } },
-              chatMessages.map((msg, idx) =>
-                React.createElement('div', { key: idx, style: { alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%', padding: '10px 14px', borderRadius: '14px', backgroundColor: msg.role === 'user' ? '#0071E3' : '#F2F2F7', color: msg.role === 'user' ? '#fff' : '#1D1D1F', fontSize: '13px' } }, msg.text)
-              )
-            ),
-            React.createElement('form', { onSubmit: handleSendMessage, style: { display: 'flex', gap: '8px', marginTop: '12px' } },
-              React.createElement('input', { type: 'text', value: inputMessage, onChange: (e) => setInputMessage(e.target.value), placeholder: 'Pregúntale a tu IA...', style: { flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid #D2D2D7', fontSize: '13px', outline: 'none' } }),
-              React.createElement('button', { type: 'submit', style: { backgroundColor: '#0071E3', color: '#fff', border: 'none', padding: '0 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' } }, 'Enviar')
-            )
-          ),
-          activeTab === 'applepay' && React.createElement('div', { style: { background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' } },
-            React.createElement('h3', { style: { fontSize: '15px', fontWeight: 600, marginTop: 0, marginBottom: '8px' } }, 'Simulador de Apple Pay'),
-            React.createElement('p', { style: { fontSize: '13px', color: '#86868B', marginBottom: '16px' } }, 'Simula un gasto instantáneo en tiempo real:'),
-            React.createElement('form', { onSubmit: handleSimulateApplePay, style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-              React.createElement('input', { type: 'text', placeholder: 'Comercio (ej. Starbucks)', value: simulatedMerchant, onChange: (e) => setSimulatedMerchant(e.target.value), style: { padding: '10px 14px', borderRadius: '10px', border: '1px solid #D2D2D7', fontSize: '13px' } }),
-              React.createElement('input', { type: '
+              React.createElement('div
