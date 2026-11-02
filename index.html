@@ -15,7 +15,8 @@
     <h1 class="text-lg font-semibold tracking-tight">Mi<span class="text-[#0071E3]">Essential</span></h1>
     <div class="flex gap-1 bg-[#E3E3E8] p-1 rounded-full text-xs font-medium overflow-x-auto">
       <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-1.5 rounded-full bg-white shadow-sm transition-all">Inicio</button>
-      <button onclick="switchTab('fixed')" id="btn-fixed" class="px-3 py-1.5 rounded-full text-[#515154] transition-all">Gastos Fijos</button>
+      <button onclick="switchTab('categories')" id="btn-categories" class="px-3 py-1.5 rounded-full text-[#515154] transition-all">Categorías</button>
+      <button onclick="switchTab('fixed')" id="btn-fixed" class="px-3 py-1.5 rounded-full text-[#515154] transition-all">Fijos</button>
       <button onclick="switchTab('applepay')" id="btn-applepay" class="px-3 py-1.5 rounded-full text-[#515154] transition-all">Apple Pay</button>
       <button onclick="switchTab('chat')" id="btn-chat" class="px-3 py-1.5 rounded-full text-[#515154] transition-all">IA</button>
     </div>
@@ -30,11 +31,17 @@
     const budgetLimit = 750;
     const initialSavings = 1650;
 
+    let categories = [
+      { id: 1, name: "Supermercado & Alimentación", limit: 250 },
+      { id: 2, name: "Ocio & Restaurantes", limit: 200 },
+      { id: 3, name: "Suscripciones & Apps", limit: 100 },
+      { id: 4, name: "Otros", limit: 200 }
+    ];
+
     let fixedExpenses = [
       { id: 1, name: "Alquiler / Hipoteca", amount: 450, category: "Hogar" },
       { id: 2, name: "Suministros (Luz/Agua)", amount: 90, category: "Hogar" },
-      { id: 3, name: "Gimnasio", amount: 35, category: "Salud" },
-      { id: 4, name: "Suscripciones", amount: 20, category: "Ocio" }
+      { id: 3, name: "Gimnasio", amount: 35, category: "Salud" }
     ];
 
     let transactions = [
@@ -45,7 +52,6 @@
 
     let chatMessages = [{ role: "assistant", text: "¡Hola! Soy tu asistente financiero de MiEssential. ¿Cómo vas este mes?" }];
 
-    // Capturar pagos automáticos enviados por URL desde el Atajo del iPhone
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const autoMerchant = urlParams.get('merchant');
@@ -66,7 +72,7 @@
 
     function switchTab(tab) {
       currentTab = tab;
-      ['dashboard', 'fixed', 'applepay', 'chat'].forEach(t => {
+      ['dashboard', 'categories', 'fixed', 'applepay', 'chat'].forEach(t => {
         const btn = document.getElementById(`btn-${t}`);
         if (btn) {
           btn.className = t === tab ? "px-3 py-1.5 rounded-full bg-white shadow-sm text-[#1D1D1F] transition-all" : "px-3 py-1.5 rounded-full text-[#515154] transition-all";
@@ -84,13 +90,6 @@
       const effectiveSavings = Math.max(0, initialSavings - excess);
 
       if (currentTab === 'dashboard') {
-        const categories = {
-          "Supermercado & Alimentación": { limit: 250, spent: transactions.filter(t => t.category === "Supermercado & Alimentación").reduce((a,b)=>a+b.amount,0) },
-          "Ocio & Restaurantes": { limit: 200, spent: transactions.filter(t => t.category === "Ocio & Restaurantes").reduce((a,b)=>a+b.amount,0) },
-          "Suscripciones & Apps": { limit: 100, spent: transactions.filter(t => t.category === "Suscripciones & Apps").reduce((a,b)=>a+b.amount,0) },
-          "Otros": { limit: 200, spent: transactions.filter(t => t.category === "Otros").reduce((a,b)=>a+b.amount,0) }
-        };
-
         container.innerHTML = `
           <div class="space-y-5">
             <div class="grid grid-cols-2 gap-4">
@@ -118,13 +117,14 @@
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
               <h3 class="text-sm font-semibold mb-4">Gráfico y Desglose por Categorías</h3>
               <div class="space-y-4">
-                ${Object.entries(categories).map(([cat, data]) => {
-                  const pct = Math.min(100, Math.round((data.spent / data.limit) * 100));
+                ${categories.map(cat => {
+                  const spent = transactions.filter(t => t.category === cat.name).reduce((a,b)=>a+b.amount,0);
+                  const pct = Math.min(100, Math.round((spent / cat.limit) * 100));
                   return `
                     <div>
                       <div class="flex justify-between text-xs font-medium mb-1">
-                        <span>${cat}</span>
-                        <span class="text-[#86868B]">${data.spent.toFixed(2)} € / ${data.limit} €</span>
+                        <span>${cat.name}</span>
+                        <span class="text-[#86868B]">${spent.toFixed(2)} € / ${cat.limit} €</span>
                       </div>
                       <div class="w-full h-2 bg-[#E5E5EA] rounded-full overflow-hidden">
                         <div class="h-full ${pct > 90 ? 'bg-[#FF3B30]' : 'bg-[#34C759]'} rounded-full transition-all" style="width: ${pct}%"></div>
@@ -151,19 +151,42 @@
             </div>
           </div>
         `;
+      } else if (currentTab === 'categories') {
+        container.innerHTML = `
+          <div class="space-y-5">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
+              <h3 class="text-sm font-semibold mb-1">Gestión de Categorías</h3>
+              <p class="text-xs text-[#86868B] mb-4">Crea nuevas categorías o edita sus límites mensuales:</p>
+              <div class="space-y-3 mb-6">
+                ${categories.map(c => `
+                  <div class="flex justify-between items-center p-3 bg-[#F9F9FB] rounded-xl text-sm">
+                    <div>
+                      <p class="font-medium">${c.name}</p>
+                      <p class="text-xs text-[#86868B]">Límite: ${c.limit} €</p>
+                    </div>
+                    <button onclick="removeCategory(${c.id})" class="text-[#FF3B30] text-xs font-medium">Eliminar</button>
+                  </div>
+                `).join('')}
+              </div>
+
+              <form onsubmit="addCategory(event)" class="space-y-3 pt-4 border-t border-black/5">
+                <h4 class="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Añadir Nueva Categoría</h4>
+                <input type="text" id="cat-name" placeholder="Nombre (ej. Viajes, Ropa)" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
+                <input type="number" id="cat-limit" placeholder="Límite en € (ej. 150)" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
+                <button type="submit" class="w-full bg-[#0071E3] text-white py-2.5 rounded-xl text-xs font-semibold shadow-sm">Guardar Categoría</button>
+              </form>
+            </div>
+          </div>
+        `;
       } else if (currentTab === 'fixed') {
         container.innerHTML = `
           <div class="space-y-5">
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
-              <h3 class="text-sm font-semibold mb-1">Gestión de Gastos Fijos</h3>
-              <p class="text-xs text-[#86868B] mb-4">Añade o modifica tus obligaciones mensuales recurrentes:</p>
+              <h3 class="text-sm font-semibold mb-1">Gastos Fijos</h3>
               <div class="space-y-3 mb-6">
                 ${fixedExpenses.map(f => `
                   <div class="flex justify-between items-center p-3 bg-[#F9F9FB] rounded-xl text-sm">
-                    <div>
-                      <p class="font-medium">${f.name}</p>
-                      <p class="text-xs text-[#86868B]">${f.category}</p>
-                    </div>
+                    <div><p class="font-medium">${f.name}</p></div>
                     <div class="flex items-center gap-3">
                       <span class="font-semibold">${f.amount.toFixed(2)} €</span>
                       <button onclick="removeFixed(${f.id})" class="text-[#FF3B30] text-xs font-medium">Eliminar</button>
@@ -171,12 +194,10 @@
                   </div>
                 `).join('')}
               </div>
-              
               <form onsubmit="addFixedExpense(event)" class="space-y-3 pt-4 border-t border-black/5">
-                <h4 class="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Añadir Nuevo Gasto Fijo</h4>
-                <input type="text" id="fixed-name" placeholder="Concepto (ej. Luz, Alquiler)" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
-                <input type="number" step="0.01" id="fixed-amount" placeholder="Importe mensual en €" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
-                <button type="submit" class="w-full bg-[#0071E3] text-white py-2.5 rounded-xl text-xs font-semibold shadow-sm">Guardar Gasto Fijo</button>
+                <input type="text" id="fixed-name" placeholder="Concepto (ej. Luz, Alquiler)" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none">
+                <input type="number" step="0.01" id="fixed-amount" placeholder="Importe en €" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none">
+                <button type="submit" class="w-full bg-[#0071E3] text-white py-2.5 rounded-xl text-xs font-semibold">Guardar Gasto Fijo</button>
               </form>
             </div>
           </div>
@@ -185,17 +206,13 @@
         container.innerHTML = `
           <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
             <h3 class="text-sm font-semibold mb-1">Simulador de Apple Pay</h3>
-            <p class="text-xs text-[#86868B] mb-4">Simula un gasto o prueba la conexión con el atajo:</p>
-            <form onsubmit="handleApplePay(event)" class="space-y-3">
-              <input type="text" id="pay-merchant" placeholder="Comercio (ej. Mercadona, Zara)" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
-              <input type="number" step="0.01" id="pay-amount" placeholder="Importe en € (ej. 15.90)" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
-              <select id="pay-category" class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none bg-white focus:border-[#0071E3]">
-                <option value="Supermercado & Alimentación">Supermercado & Alimentación</option>
-                <option value="Ocio & Restaurantes">Ocio & Restaurantes</option>
-                <option value="Suscripciones & Apps">Suscripciones & Apps</option>
-                <option value="Otros">Otros</option>
+            <form onsubmit="handleApplePay(event)" class="space-y-3 mt-3">
+              <input type="text" id="pay-merchant" placeholder="Comercio" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none">
+              <input type="number" step="0.01" id="pay-amount" placeholder="Importe en €" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none">
+              <select id="pay-category" class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none bg-white">
+                ${categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('')}
               </select>
-              <button type="submit" class="w-full bg-[#34C759] text-white py-3 rounded-xl text-xs font-semibold shadow-sm">Simular Gasto</button>
+              <button type="submit" class="w-full bg-[#34C759] text-white py-3 rounded-xl text-xs font-semibold">Simular Gasto</button>
             </form>
           </div>
         `;
@@ -211,7 +228,7 @@
               `).join('')}
             </div>
             <form onsubmit="handleChat(event)" class="flex gap-2">
-              <input type="text" id="chat-input" placeholder="Pregúntale sobre tus finanzas..." class="flex-1 px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
+              <input type="text" id="chat-input" placeholder="Pregúntale sobre tus finanzas..." class="flex-1 px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none">
               <button type="submit" class="bg-[#0071E3] text-white px-4 py-2.5 rounded-xl text-xs font-medium">Enviar</button>
             </form>
           </div>
@@ -221,12 +238,26 @@
       }
     }
 
+    function addCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('cat-name').value;
+      const limit = parseFloat(document.getElementById('cat-limit').value);
+      if (!name || isNaN(limit)) return;
+      categories.push({ id: Date.now(), name, limit });
+      switchTab('dashboard');
+    }
+
+    function removeCategory(id) {
+      categories = categories.filter(c => c.id !== id);
+      render();
+    }
+
     function addFixedExpense(e) {
       e.preventDefault();
       const name = document.getElementById('fixed-name').value;
       const amount = parseFloat(document.getElementById('fixed-amount').value);
       if (!name || isNaN(amount)) return;
-      fixedExpenses.push({ id: Date.now(), name, amount, category: "Hogar" });
+      fixedExpenses.push({ id: Date.now(), name, amount });
       switchTab('dashboard');
     }
 
@@ -256,8 +287,7 @@
 
       setTimeout(() => {
         const totalVar = transactions.reduce((acc, t) => acc + t.amount, 0);
-        const totalFix = fixedExpenses.reduce((acc, f) => acc + f.amount, 0);
-        chatMessages.push({ role: 'assistant', text: `Llevas gastados ${totalVar.toFixed(2)}€ en variable de tu base de ${budgetLimit}€ y ${totalFix.toFixed(2)}€ en fijos. ¡Vas por buen camino!` });
+        chatMessages.push({ role: 'assistant', text: `Llevas gastados ${totalVar.toFixed(2)}€ de tu presupuesto variable. ¡Todo bajo control!` });
         render();
       }, 500);
     }
