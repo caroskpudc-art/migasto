@@ -4,92 +4,161 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MiEssential</title>
-  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif; background-color: #F5F5F7; color: #1D1D1F; }
+    .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+  </style>
 </head>
-<body class="bg-[#F5F5F7] text-[#1D1D1F] m-0 p-0">
-  <div id="root"></div>
+<body class="min-h-screen pb-12">
+  <header class="glass sticky top-0 z-50 border-b border-black/5 px-5 py-3 flex justify-between items-center">
+    <h1 class="text-lg font-semibold tracking-tight">Mi<span class="text-[#0071E3]">Essential</span></h1>
+    <div class="flex gap-2 bg-[#E3E3E8] p-1 rounded-full text-xs font-medium">
+      <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-1.5 rounded-full bg-white shadow-sm transition-all">Inicio</button>
+      <button onclick="switchTab('chat')" id="btn-chat" class="px-3 py-1.5 rounded-full text-[#515154] transition-all">IA Asistente</button>
+      <button onclick="switchTab('applepay')" id="btn-applepay" class="px-3 py-1.5 rounded-full text-[#515154] transition-all">Apple Pay</button>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto px-4 mt-6" id="app-container">
+    <!-- El contenido se inyecta dinámicamente -->
+  </main>
+
   <script>
-    const { useState } = React;
-    function MiEssentialApp() {
-      const [activeTab, setActiveTab] = useState("dashboard");
-      const [budgets] = useState({
-        totalMonthly: 750,
-        categories: {
-          "Supermercado & Alimentación": 250,
-          "Ocio & Restaurantes": 200,
-          "Hogar & Suministros": 150,
-          "Suscripciones & Apps": 100,
-          "Otros": 50
+    let currentTab = 'dashboard';
+    let transactions = [
+      { id: 1, merchant: "Planeta Huerto", amount: 14.50, category: "Supermercado & Alimentación", date: "Hoy, 10:30" },
+      { id: 2, merchant: "Spotify", amount: 10.99, category: "Suscripciones & Apps", date: "Ayer" },
+      { id: 3, merchant: "Cafetería Local", amount: 3.80, category: "Ocio & Restaurantes", date: "Hace 2 días" }
+    ];
+    let chatMessages = [{ role: "assistant", text: "¡Hola! Soy tu asistente financiero de MiEssential. ¿Cómo vas este mes?" }];
+    const budgetLimit = 750;
+    const totalSavings = 1650;
+
+    function switchTab(tab) {
+      currentTab = tab;
+      ['dashboard', 'chat', 'applepay'].forEach(t => {
+        const btn = document.getElementById(`btn-${t}`);
+        if (t === tab) {
+          btn.className = "px-3 py-1.5 rounded-full bg-white shadow-sm text-[#1D1D1F] transition-all";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-full text-[#515154] transition-all";
         }
       });
-      const [savingsGoals] = useState([
-        { id: 1, name: "Colchón de seguridad", target: 2000, current: 1200 },
-        { id: 2, name: "Viaje / Vacaciones", target: 800, current: 450 }
-      ]);
-      const [transactions, setTransactions] = useState([
-        { id: 1, merchant: "Planeta Huerto", amount: 14.50, category: "Supermercado & Alimentación", date: "Hoy, 10:30", type: "apple-pay", unnecessary: false },
-        { id: 2, merchant: "Spotify", amount: 10.99, category: "Suscripciones & Apps", date: "Ayer", type: "apple-pay", unnecessary: true },
-        { id: 3, merchant: "Cafetería Local", amount: 3.80, category: "Ocio & Restaurantes", date: "Hace 2 días", type: "apple-pay", unnecessary: true }
-      ]);
-      const [chatMessages, setChatMessages] = useState([
-        { role: "assistant", text: "¡Hola! Soy tu asistente financiero de MiEssential. ¿Cómo vas este mes?" }
-      ]);
-      const [inputMessage, setInputMessage] = useState("");
-      const [simulatedMerchant, setSimulatedMerchant] = useState("");
-      const [simulatedAmount, setSimulatedAmount] = useState("");
+      render();
+    }
 
+    function render() {
+      const container = document.getElementById('app-container');
       const totalSpent = transactions.reduce((acc, t) => acc + t.amount, 0);
-      const totalSavings = savingsGoals.reduce((acc, g) => acc + g.current, 0);
-      const budgetLimit = budgets.totalMonthly;
       const totalAvailable = budgetLimit - totalSpent;
-      const effectiveSavings = Math.max(0, totalSavings);
+      const excess = totalSpent > budgetLimit ? totalSpent - budgetLimit : 0;
+      const effectiveSavings = Math.max(0, totalSavings - excess);
 
-      const handleSimulateApplePay = (e) => {
-        e.preventDefault();
-        if (!simulatedMerchant || !simulatedAmount) return;
-        const amountNum = parseFloat(simulatedAmount);
-        const newTx = {
-          id: Date.now(),
-          merchant: simulatedMerchant,
-          amount: amountNum,
-          category: "Otros",
-          date: "Justo ahora",
-          type: "apple-pay",
-          unnecessary: amountNum < 20
-        };
-        setTransactions([newTx, ...transactions]);
-        setSimulatedMerchant("");
-        setSimulatedAmount("");
-      };
+      if (currentTab === 'dashboard') {
+        container.innerHTML = `
+          <div class="space-y-5">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
+                <p class="text-xs font-medium text-[#86868B] mb-1">Total Disponible</p>
+                <h2 class="text-2xl font-bold ${totalAvailable >= 0 ? 'text-[#1D1D1F]' : 'text-[#FF3B30]'}">${totalAvailable.toFixed(2)} €</h2>
+              </div>
+              <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
+                <p class="text-xs font-medium text-[#86868B] mb-1">Total Ahorros</p>
+                <h2 class="text-2xl font-bold text-[#0071E3]">${effectiveSavings.toFixed(2)} €</h2>
+              </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
+              <h3 class="text-sm font-semibold mb-4">Presupuesto Base (${budgetLimit} €)</h3>
+              <div class="space-y-3">
+                <div>
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>Gastos Totales</span>
+                    <span class="text-[#86868B]">${totalSpent.toFixed(2)} € / ${budgetLimit} €</span>
+                  </div>
+                  <div class="w-full h-2 bg-[#E5E5EA] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#0071E3] rounded-full" style="width: ${Math.min(100, (totalSpent/budgetLimit)*100)}%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
+              <h3 class="text-sm font-semibold mb-3">Últimos Gastos (Apple Pay)</h3>
+              <div class="divide-y divide-black/5">
+                ${transactions.map(t => `
+                  <div class="py-3 flex justify-between items-center text-sm">
+                    <div>
+                      <p class="font-medium">${t.merchant}</p>
+                      <p class="text-xs text-[#86868B]">${t.date} • ${t.category}</p>
+                    </div>
+                    <span class="font-semibold text-[#FF3B30]">- ${t.amount.toFixed(2)} €</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (currentTab === 'chat') {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl shadow-sm border border-black/5 flex flex-col h-[480px] p-4">
+            <h3 class="text-sm font-semibold mb-3">Asistente IA Gemini</h3>
+            <div id="chat-messages" class="flex-1 overflow-y-auto space-y-3 pr-2 mb-3">
+              ${chatMessages.map(m => `
+                <div class="max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${m.role === 'user' ? 'ml-auto bg-[#0071E3] text-white' : 'mr-auto bg-[#F2F2F7] text-[#1D1D1F]'}">
+                  ${m.text}
+                </div>
+              `).join('')}
+            </div>
+            <form onsubmit="handleChat(event)" class="flex gap-2">
+              <input type="text" id="chat-input" placeholder="Pregúntale a tu IA..." class="flex-1 px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
+              <button type="submit" class="bg-[#0071E3] text-white px-4 py-2.5 rounded-xl text-xs font-medium">Enviar</button>
+            </form>
+          </div>
+        `;
+        const chatBox = document.getElementById('chat-messages');
+        chatBox.scrollTop = chatBox.scrollHeight;
+      } else if (currentTab === 'applepay') {
+        container.innerHTML = `
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-black/5">
+            <h3 class="text-sm font-semibold mb-1">Simulador de Apple Pay</h3>
+            <p class="text-xs text-[#86868B] mb-4">Simula un gasto instantáneo en tiempo real:</p>
+            <form onsubmit="handleApplePay(event)" class="space-y-3">
+              <input type="text" id="pay-merchant" placeholder="Comercio (ej. Starbucks)" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
+              <input type="number" step="0.01" id="pay-amount" placeholder="Importe en € (ej. 4.50)" required class="w-full px-4 py-2.5 rounded-xl border border-[#D2D2D7] text-xs outline-none focus:border-[#0071E3]">
+              <button type="submit" class="w-full bg-[#34C759] text-white py-3 rounded-xl text-xs font-semibold shadow-sm">Simular Gasto</button>
+            </form>
+          </div>
+        `;
+      }
+    }
 
-      const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (!inputMessage.trim()) return;
-        const userMsg = inputMessage;
-        setChatMessages((prev) => [...prev, { role: "user", text: userMsg }]);
-        setInputMessage("");
-        setTimeout(() => {
-          let reply = `Llevas gastados ${totalSpent.toFixed(2)}€ de tu presupuesto de ${budgetLimit}€. Tu total disponible es de ${totalAvailable.toFixed(2)}€.`;
-          setChatMessages((prev) => [...prev, { role: "assistant", text: reply }]);
-        }, 600);
-      };
+    function handleApplePay(e) {
+      e.preventDefault();
+      const merchant = document.getElementById('pay-merchant').value;
+      const amount = parseFloat(document.getElementById('pay-amount').value);
+      if (!merchant || isNaN(amount)) return;
+      transactions.unshift({ id: Date.now(), merchant, amount, category: "Otros", date: "Justo ahora" });
+      switchTab('dashboard');
+    }
 
-      return React.createElement('div', { style: { fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#F5F5F7', color: '#1D1D1F', minHeight: '100vh', paddingBottom: '40px' } },
-        React.createElement('header', { style: { backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-          React.createElement('h1', { style: { fontSize: '18px', fontWeight: 600, margin: 0 } }, 'Mi', React.createElement('span', { style: { color: '#0071E3' } }, 'Essential')),
-          React.createElement('div', { style: { display: 'flex', gap: '8px' } },
-            ['dashboard', 'chat', 'applepay'].map((tab) =>
-              React.createElement('button', {
-                key: tab,
-                onClick: () => setActiveTab(tab),
-                style: { backgroundColor: activeTab === tab ? '#0071E3' : 'transparent', color: activeTab === tab ? '#fff' : '#1D1D1F', border: 'none', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }
-              }, tab === 'dashboard' ? 'Inicio' : tab === 'chat' ? 'IA Asistente' : 'Apple Pay')
-            )
-          )
-        ),
-        React.createElement('main', { style: { maxWidth: '680px', margin: '24px auto', padding: '0 16px' } },
-          activeTab === 'dashboard' && React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
-            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' } },
-              React.createElement('div
+    function handleChat(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      chatMessages.push({ role: 'user', text });
+      input.value = '';
+      render();
+
+      setTimeout(() => {
+        const totalSpent = transactions.reduce((acc, t) => acc + t.amount, 0);
+        const totalAvailable = budgetLimit - totalSpent;
+        chatMessages.push({ role: 'assistant', text: `Llevas gastados ${totalSpent.toFixed(2)}€ de tu presupuesto base de ${budgetLimit}€. Te quedan ${totalAvailable.toFixed(2)}€ disponibles este mes.` });
+        render();
+      }, 500);
+    }
+
+    render();
+  </script>
+</body>
+</html>
